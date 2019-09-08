@@ -20,29 +20,38 @@ ue = 5 # V
 uc0 = 0 # V
 i0 = 0 # A
 f = 50 # Hz
-T = 0.2 # s
-steps = 100
-
-ts = ls(0, T, steps)
+T = R*C*100 # s
+steps = 200
+p = T*2 # s
+ts = ls(0, T*2, steps)
 x0  = [uc0, i0]
 
-def dx_dt_1(x, dt):
-    return [x[1]/C, -x[0]/L-x[1]*R/L + ue/L]
+def const(dt):
+    return ue
+
+def rect(dt):
+    if (dt % p) > p/2:
+        return 0
+    else:
+        return ue
     
-def dx_dt_2(x, dt):
-    return [x[1]/C, -x[0]/L-x[1]*R/L + ue*(sin(f*dt/T))/L]
+def sinus(dt):
+    return ue*(sin(f*dt/T))
+    
+signal = rect
+
+def dx_dt(x, dt):
+    return [x[1]/C, -x[0]/L-x[1]*R/L + signal(dt)/L]
   
-res = odeint(dx_dt_1, x0, ts)
+res = odeint(dx_dt, x0, ts)
 
 result = pd.DataFrame()
 result['uc'] = res[:,0]
 result['i'] = res[:,1]
 result['t'] = ts
-ax = result.plot(x='t', y=['uc', 'i'], grid=True)
-ax.set_title('LRC Schwingkreis')
+result['ue'] = [signal(dt) for dt in ts]
+ax = result.plot(x='t', y=['ue', 'i', 'uc'], grid=True)
+ax.set_title('RLC Schwingkreis')
 ax.set_xlabel('t [s]')
-
-
-
 
 
