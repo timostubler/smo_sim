@@ -1,0 +1,64 @@
+# -*- coding: utf-8 -*-
+# α, β, Γ, γ, Δ, δ, ϵ, ζ
+# η, Θ, ϑ, ι, κ, Λ, λ, μ
+# ν, Ξ, ξ, Π, π, ρ, Σ, σ
+# τ, Φ, ϕ, χ, Ψ, ψ, Ω, ω
+"""
+Created on Tue May 14 14:02:31 2019
+@author: timo.stubler / kristjan.axelsson
+"""
+
+import pandas as pd
+from numpy import linspace as ls
+from scipy.integrate import odeint
+from math import sin
+
+R = 2*10**1 # Ω
+R2 = 10*10**1 # Ω R2 ist oarallel zur kapazität
+L = 1*10**1 # H
+C = 1*10**-1 # F
+ue = 5 # V
+uc0 = 0 # V
+i0 = 0 # A
+f = 50 # Hz
+T = R*C*40 # s
+steps = 200
+p = T*2 # s
+ts = ls(0, T*5, steps)
+x0  = [uc0, i0]
+
+def const(dt):
+    return ue
+
+def rect(dt):
+    if (dt % p) > p/2:
+        return -ue
+    else:
+        return ue
+    
+def sinus(dt):
+    return ue*(sin(f*dt/T))
+    
+signal = rect
+
+def velve(uv):
+    if uv > 0:
+        return R
+    else:
+        return R**5
+
+def dx_dt(x, dt):
+    Uv = signal(dt) - float(x[0])
+    Rv = velve(Uv)
+    return [x[1], ((-Rv*C-L/R2)*x[1] - (1+Rv/R2)*x[0]+signal(dt))/(L*C)]
+    
+res = odeint(dx_dt, x0, ts)
+
+result = pd.DataFrame()
+result['uc'] = res[:,0]
+result['i'] = res[:,1]
+result['t'] = ts
+result['ue'] = [signal(dt) for dt in ts]
+ax = result.plot(x='t', y=['ue', 'i', 'uc'], grid=True)
+ax.set_title('RLC Schwingkreis')
+ax.set_xlabel('t [s]')
